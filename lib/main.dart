@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:preppilot/core/theme/app_theme.dart';
 import 'package:preppilot/shared/widgets/main_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:preppilot/shared/widgets/onboarding_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,14 @@ class PrepPilotApp extends StatelessWidget {
     return MaterialApp(
       title: 'PrepPilot',
       theme: AppTheme.lightTheme,
-      home: const MainShell(),
+      home: FutureBuilder<SharedPreferences>(
+        future: SharedPreferences.getInstance(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          final onboarded = snapshot.data!.getBool('onboarded') ?? false;
+          return onboarded ? const MainShell() : const OnboardingScreen();
+        },
+      ),
       debugShowCheckedModeBanner: false,
     );
   }

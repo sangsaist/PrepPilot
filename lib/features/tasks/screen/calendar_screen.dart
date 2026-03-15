@@ -6,6 +6,8 @@ import 'package:preppilot/features/tasks/model/task_model.dart';
 import 'package:preppilot/features/tasks/provider/task_provider.dart';
 import 'package:preppilot/features/tasks/widgets/task_card.dart';
 import 'package:preppilot/features/tasks/widgets/task_bottom_sheet.dart';
+import 'package:preppilot/features/activities/model/activity_model.dart';
+import 'package:preppilot/features/activities/provider/activity_provider.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -27,9 +29,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final allTasksAsync = ref.watch(taskNotifierProvider);
+    final allActivitiesAsync = ref.watch(activityNotifierProvider);
+    
     final selectedDayTasks = _selectedDay != null 
         ? ref.watch(tasksByDateProvider(_selectedDay!)) 
         : <Task>[];
+        
+    final selectedDayActivities = _selectedDay != null
+        ? _getActivitiesForDay(allActivitiesAsync.value ?? [], _selectedDay!)
+        : <Activity>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -37,10 +45,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ),
       body: Column(
         children: [
-          _buildCalendar(allTasksAsync),
+          _buildCalendar(allTasksAsync, allActivitiesAsync),
           const Divider(height: 1),
           Expanded(
-            child: _buildTaskList(selectedDayTasks),
+            child: _buildCombinedList(selectedDayTasks, selectedDayActivities),
           ),
         ],
       ),
@@ -58,7 +66,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildCalendar(AsyncValue<List<Task>> allTasksAsync) {
+  List<Activity> _getActivitiesForDay(List<Activity> activities, DateTime day) {
+    final dateStr = day.toIso8601String().split('T')[0];
+    return activities.where((a) => a.deadline.toIso8601String().split('T')[0] == dateStr).toList();
+  }
+
+  Widget _buildCalendar(AsyncValue<List<Task>> tasksAsync, AsyncValue<List<Activity>> activitiesAsync) {
     return TableCalendar(
       firstDay: DateTime.utc(2020, 1, 1),
       lastDay: DateTime.utc(2030, 12, 31),
@@ -75,56 +88,89 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         formatButtonVisible: false,
         titleCentered: true,
       ),
-      calendarStyle: CalendarStyle(
-        markersMaxCount: 1,
-        markerDecoration: const BoxDecoration(
-          color: AppTheme.primaryColor,
-          shape: BoxShape.circle,
-        ),
-        selectedDecoration: const BoxDecoration(
-          color: AppTheme.primaryColor,
-          shape: BoxShape.circle,
-        ),
-        todayDecoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.3),
-          shape: BoxShape.circle,
-        ),
+      calendarStyle: const CalendarStyle(
+        selectedDecoration: BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
+        todayDecoration: BoxDecoration(color: Color(0x4D5C6BC0), shape: BoxShape.circle),
       ),
       eventLoader: (day) {
-        return allTasksAsync.maybeWhen(
-          data: (tasks) {
-            final dateStr = day.toIso8601String().split('T')[0];
-            return tasks.where((t) => t.date.toIso8601String().split('T')[0] == dateStr).toList();
-          },
-          orElse: () => [],
-        );
+        final dateStr = day.toIso8601String().split('T')[0];
+        final dayTasks = tasksAsync.value?.where((t) => t.date.toIso8601String().split('T')[0] == dateStr).toList() ?? [];
+        final dayActivities = activitiesAsync.value?.where((a) => a.deadline.toIso8601String().split('T')[0] == dateStr).toList() ?? [];
+        return [...dayTasks, ...dayActivities];
       },
+      calendarBuilders: CalendarBuilders(
+        markerBuilder: (context, date, events) {
+          if (events.isEmpty) return const SizedBox();
+          
+          final hasTask = events.any((e) => e is Task);
+          final hasActivity = events.any((e) => e is Activity);
+          
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (hasTask)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(color: AppTheme.primaryColor, shape: BoxShape.circle),
+                ),
+              if (hasActivity)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildTaskList(List<Task> tasks) {
-    if (tasks.isEmpty) {
+  Widget _buildCombinedList(List<Task> tasks, List<Activity> activities) {
+    if (tasks.isEmpty && activities.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.event_available, size: 64, color: AppTheme.secondaryText.withOpacity(0.3)),
             const SizedBox(height: 16),
-            Text(
-              'No tasks for this day',
-              style: TextStyle(color: AppTheme.secondaryText),
-            ),
+            Text('No events for this day', style: TextStyle(color: AppTheme.secondaryText)),
           ],
         ),
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        return TaskCard(task: tasks[index]);
-      },
+      children: [
+        ...tasks.map((task) => TaskCard(task: task)),
+        ...activities.map((activity) => _ActivityDeadlineCard(activity: activity)),
+      ],
+    );
+  }
+}
+
+class _ActivityDeadlineCard extends StatelessWidget {
+  final Activity activity;
+  const _ActivityDeadlineCard({required this.activity});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        title: Text(activity.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text("${activity.type} • ${activity.platform}", style: const TextStyle(fontSize: 12)),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(color: Colors.red.shade100, borderRadius: BorderRadius.circular(4)),
+          child: const Text("Deadline", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 10)),
+        ),
+      ),
     );
   }
 }
