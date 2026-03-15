@@ -4,9 +4,11 @@ import 'package:preppilot/core/theme/app_theme.dart';
 import 'package:preppilot/shared/widgets/main_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:preppilot/shared/widgets/onboarding_screen.dart';
+import 'package:preppilot/features/notifications/service/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
   runApp(
     const ProviderScope(
       child: PrepPilotApp(),

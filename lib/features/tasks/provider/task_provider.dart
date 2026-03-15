@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:preppilot/features/tasks/model/task_model.dart';
 import 'package:preppilot/features/tasks/repo/task_repo.dart';
+import 'package:preppilot/features/notifications/rules/notification_rules.dart';
 
 final taskRepositoryProvider = Provider((ref) => TaskRepository());
 
@@ -23,19 +24,22 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
 
   Future<void> addTask(Task task) async {
     final repo = ref.read(taskRepositoryProvider);
-    await repo.insertTask(task);
+    final id = await repo.insertTask(task);
+    NotificationRules.onTaskCreatedOrUpdated(task.copyWith(taskId: id));
     await refreshTasks();
   }
 
   Future<void> updateTask(Task task) async {
     final repo = ref.read(taskRepositoryProvider);
     await repo.updateTask(task);
+    NotificationRules.onTaskCreatedOrUpdated(task);
     await refreshTasks();
   }
 
   Future<void> deleteTask(int taskId) async {
     final repo = ref.read(taskRepositoryProvider);
     await repo.deleteTask(taskId);
+    NotificationRules.onTaskDeleted(taskId);
     await refreshTasks();
   }
 }

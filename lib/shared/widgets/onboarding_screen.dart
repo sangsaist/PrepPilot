@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:preppilot/core/theme/app_theme.dart';
 import 'package:preppilot/shared/widgets/main_shell.dart';
+import 'package:preppilot/features/notifications/service/notification_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,6 +20,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', _nameController.text.trim());
     await prefs.setBool('onboarded', true);
+    
+    await NotificationService().requestPermissions();
 
     if (mounted) {
       Navigator.of(context).pushReplacement(

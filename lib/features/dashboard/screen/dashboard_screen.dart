@@ -9,6 +9,9 @@ import 'package:preppilot/shared/utils/pressure_score.dart';
 import 'package:preppilot/features/tasks/model/task_model.dart';
 import 'package:preppilot/features/activities/model/activity_model.dart';
 import 'package:preppilot/features/tasks/widgets/task_bottom_sheet.dart';
+import 'package:preppilot/features/vault/screen/vault_screen.dart';
+import 'package:preppilot/shared/utils/csv_exporter.dart';
+import 'package:preppilot/shared/utils/pdf_exporter.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -36,11 +39,16 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             _buildHeader(),
             const SizedBox(height: 24),
+            _buildVaultCard(context),
+            const SizedBox(height: 24),
             _buildPressureCard(tasksAsync, activitiesAsync),
             const SizedBox(height: 24),
             _buildTodayTasks(context, todayTasks),
             const SizedBox(height: 24),
             _buildActiveActivities(context, activitiesAsync),
+            const SizedBox(height: 24),
+            _buildExportSection(context, ref, tasksAsync, activitiesAsync),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -83,6 +91,18 @@ class DashboardScreen extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildVaultCard(BuildContext context) {
+    return Card(
+      child: ListTile(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VaultScreen())),
+        leading: const Icon(Icons.folder_shared_outlined, color: AppTheme.primaryColor),
+        title: const Text("My Storage Vault", style: TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: const Text("Access all your resumes, certificates and files"),
+        trailing: const Icon(Icons.chevron_right),
+      ),
     );
   }
 
@@ -237,6 +257,70 @@ class DashboardScreen extends ConsumerWidget {
               ),
             );
           }),
+      ],
+    );
+  }
+
+  Widget _buildExportSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Task>> tasksAsync,
+    AsyncValue<List<Activity>> activitiesAsync,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Exports", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await CsvExporter.exportTasksCSV(tasksAsync.value ?? []);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tasks exported successfully")));
+                  }
+                },
+                icon: const Icon(Icons.file_download_outlined),
+                label: const Text("Tasks CSV", style: TextStyle(fontSize: 12)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  await CsvExporter.exportActivitiesCSV(activitiesAsync.value ?? []);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Activities exported successfully")));
+                  }
+                },
+                icon: const Icon(Icons.file_download_outlined),
+                label: const Text("Activities CSV", style: TextStyle(fontSize: 12)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              final name = prefs.getString('user_name') ?? 'User';
+              await PdfExporter.exportAchievementPDF(
+                userName: name,
+                activities: activitiesAsync.value ?? [],
+                tasks: tasksAsync.value ?? [],
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Achievement PDF generated successfully")));
+              }
+            },
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            label: const Text("Generate Achievement PDF"),
+          ),
+        ),
       ],
     );
   }

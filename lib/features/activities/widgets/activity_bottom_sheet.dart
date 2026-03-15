@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:preppilot/core/theme/app_theme.dart';
 import 'package:preppilot/features/activities/model/activity_model.dart';
 import 'package:preppilot/features/activities/provider/activity_provider.dart';
+import 'package:preppilot/features/vault/provider/vault_provider.dart';
+import 'package:preppilot/features/vault/widgets/attach_file_button.dart';
+import 'package:open_file/open_file.dart';
 
 class ActivityBottomSheet extends ConsumerStatefulWidget {
   final Activity? activity;
@@ -171,10 +174,32 @@ class _ActivityBottomSheetState extends ConsumerState<ActivityBottomSheet> {
                 child: const Text('Save Activity'),
               ),
             ),
+            if (widget.activity != null) ...[
+              const SizedBox(height: 24),
+              const Text('Attached Files', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              _buildAttachedFilesList(),
+              const SizedBox(height: 12),
+              AttachFileButton(linkedType: 'activity', linkedId: widget.activity!.activityId!),
+            ],
             const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAttachedFilesList() {
+    final files = ref.watch(filesByLinkedItemProvider(('activity', widget.activity!.activityId!)));
+    if (files.isEmpty) return const Text("No files attached", style: TextStyle(fontSize: 12, color: AppTheme.secondaryText));
+    
+    return Column(
+      children: files.map((f) => ListTile(
+        leading: const Icon(Icons.attach_file, size: 18),
+        title: Text(f.label, style: const TextStyle(fontSize: 14)),
+        dense: true,
+        onTap: () => OpenFile.open(f.localUri),
+      )).toList(),
     );
   }
 

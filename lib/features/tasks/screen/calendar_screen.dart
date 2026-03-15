@@ -120,7 +120,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 1),
                   width: 6,
                   height: 6,
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: Color(0xFFE53935), shape: BoxShape.circle),
                 ),
             ],
           );
