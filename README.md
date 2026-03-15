@@ -53,21 +53,6 @@
 
 ---
 
-## 📸 Screenshots
-
-<div align="center">
-<table>
-  <tr>
-    <td align="center"><img src="screenshots/01_dashboard.png" width="200"/><br/><sub>Dashboard</sub></td>
-    <td align="center"><img src="screenshots/02_calendar.png" width="200"/><br/><sub>Calendar</sub></td>
-    <td align="center"><img src="screenshots/03_activity_tracker.png" width="200"/><br/><sub>Activity Tracker</sub></td>
-    <td align="center"><img src="screenshots/04_vault.png" width="200"/><br/><sub>Storage Vault</sub></td>
-  </tr>
-</table>
-</div>
-
----
-
 ## 🧩 Features
 
 | Module | Description |
