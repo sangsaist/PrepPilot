@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:preppilot/features/dashboard/screen/dashboard_screen.dart';
+import 'package:preppilot/features/activities/screen/activity_screen.dart';
+import 'package:preppilot/features/tasks/screen/calendar_screen.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -12,18 +15,18 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _currentIndex = 0;
 
   final List<Widget> _tabs = [
-    const Center(child: Text("Home Tab")), // Placeholder for Home
-    const Center(child: Text("Track Tab")), // Placeholder for Track
-    const Center(child: Text("Plan Tab")), // Placeholder for Plan
+    const DashboardScreen(),
+    const ActivityScreen(),
+    const CalendarScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PrepPilot'),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _tabs,
       ),
-      body: _tabs[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -31,6 +34,7 @@ class _MainShellState extends ConsumerState<MainShell> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -43,8 +47,8 @@ class _MainShellState extends ConsumerState<MainShell> {
             label: 'Track',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
+            icon: Icon(Icons.calendar_month_outlined),
+            activeIcon: Icon(Icons.calendar_month),
             label: 'Plan',
           ),
         ],
