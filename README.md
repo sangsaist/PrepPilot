@@ -1,8 +1,10 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=5C6BC0&height=200&section=header&text=PrepPilot&fontSize=80&fontColor=ffffff&fontAlignY=38&desc=Your%20local-first%20career%20preparation%20manager&descAlignY=58&descColor=ffffff" width="100%"/>
+<img src="assets/images/logo.png" width="120" height="120" alt="PrepPilot Logo"/>
 
-<br/>
+<h1>PrepPilot</h1>
+
+<p><strong>Your local-first career preparation manager</strong></p>
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
@@ -10,8 +12,8 @@
 [![Riverpod](https://img.shields.io/badge/Riverpod-State%20Management-0065D0?style=for-the-badge)](https://riverpod.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green?style=for-the-badge&logo=android&logoColor=white)]()
-[![Status](https://img.shields.io/badge/Status-In%20Development-orange?style=for-the-badge)]()
-[![GitHub stars](https://img.shields.io/github/stars/sangsaist/PrepPilot?style=for-the-badge&logo=github)](https://github.com/sangsaist/PrepPilot/stargazers)
+[![Release](https://img.shields.io/github/v/release/sangsaist/PrepPilot?style=for-the-badge&logo=github&color=5C6BC0)](https://github.com/sangsaist/PrepPilot/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/sangsaist/PrepPilot/total?style=for-the-badge&logo=github)](https://github.com/sangsaist/PrepPilot/releases)
 
 <br/>
 
@@ -19,8 +21,49 @@
 
 <br/>
 
-[Features](#-features) · [Architecture](#-architecture) · [Database Schema](#-database-schema) · [Tech Stack](#-tech-stack) · [Roadmap](#-roadmap) · [Contributing](#-contributing)
+[Download APK](#-download) · [Features](#-features) · [Architecture](#-architecture) · [Schema](#-database-schema) · [Tech Stack](#-tech-stack) · [Roadmap](#-roadmap) · [Contributing](#-contributing)
 
+</div>
+
+---
+
+## 📥 Download
+
+<div align="center">
+
+### Latest Release — v1.0.0
+
+<a href="https://github.com/sangsaist/PrepPilot/releases/download/v1.0.0/PrepPilot-v1.0.0.apk">
+  <img src="https://img.shields.io/badge/Download%20APK-v1.0.0-5C6BC0?style=for-the-badge&logo=android&logoColor=white" alt="Download APK"/>
+</a>
+
+| File | Size | Platform |
+|---|---|---|
+| [PrepPilot-v1.0.0.apk](https://github.com/sangsaist/PrepPilot/releases/download/v1.0.0/PrepPilot-v1.0.0.apk) | ~18 MB | Android 5.0+ (API 21+) |
+
+**Install instructions:**
+1. Download the APK from the link above
+2. On your Android device: Settings → Security → Enable "Install from unknown sources"
+3. Open the downloaded APK and tap Install
+4. No internet connection required — ever
+
+> iOS build coming in v1.1.0
+
+</div>
+
+---
+
+## 📸 Screenshots
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/01_dashboard.png" width="200"/><br/><sub>Dashboard</sub></td>
+    <td align="center"><img src="screenshots/02_calendar.png" width="200"/><br/><sub>Calendar</sub></td>
+    <td align="center"><img src="screenshots/03_activity_tracker.png" width="200"/><br/><sub>Activity Tracker</sub></td>
+    <td align="center"><img src="screenshots/04_vault.png" width="200"/><br/><sub>Storage Vault</sub></td>
+  </tr>
+</table>
 </div>
 
 ---
@@ -104,7 +147,7 @@ graph TD
 
 ## 🗄 Database Schema
 
-All data is stored in a single SQLite database on the device. The schema uses a **polymorphic FK pattern** (`linked_type` + `linked_id`) so notes, files, and reminders attach to any entity without extra join tables.
+All data is stored in a single SQLite database on the device. Uses a **polymorphic FK pattern** (`linked_type` + `linked_id`) so notes, files, and reminders attach to any entity without extra join tables.
 
 ```mermaid
 erDiagram
@@ -118,7 +161,6 @@ erDiagram
         text linked_type
         integer linked_id
     }
-
     ACTIVITIES {
         integer activity_id PK
         text type
@@ -128,7 +170,6 @@ erDiagram
         integer progress
         text notes
     }
-
     PROJECTS {
         integer project_id PK
         text name
@@ -136,7 +177,6 @@ erDiagram
         text status
         text repo_url
     }
-
     NOTES {
         integer note_id PK
         text linked_type
@@ -145,7 +185,6 @@ erDiagram
         text image_uri
         text created_at
     }
-
     FILE_INDEX {
         integer file_id PK
         text linked_type
@@ -155,7 +194,6 @@ erDiagram
         text file_type
         text created_at
     }
-
     REMINDERS {
         integer reminder_id PK
         text linked_type
@@ -189,35 +227,35 @@ erDiagram
 | **Notifications** | flutter_local_notifications | On-device deadline alerts |
 | **File Picker** | file_picker | Attach files to vault |
 | **PDF Export** | pdf + printing | Achievement summary export |
-| **CSV Export** | share_plus | Share tasks/activities as CSV |
+| **CSV + Share** | share_plus | Share tasks/activities as CSV |
 | **Onboarding** | shared_preferences | Store user name, first-launch flag |
+| **File Opening** | open_file | Open vault files |
+| **URL Launch** | url_launcher | Open repo links |
+| **Speed Dial** | flutter_speed_dial | Multi-action FAB |
 | **IDE** | Antigravity IDE | AI-agent assisted development |
 
 ---
 
 ## 📊 Deadline Pressure Score
 
-The dashboard shows a **pressure score (0–100)** computed from open tasks and upcoming activity deadlines. It is purely local arithmetic — no ML, no API.
+The dashboard shows a **pressure score (0–100)** computed from open tasks and upcoming activity deadlines. Purely local arithmetic — no ML, no API.
 
 ```dart
 int calcPressureScore(List<Task> tasks, List<Activity> activities) {
   final now = DateTime.now();
   int score = 0;
-
   for (final t in tasks.where((t) => t.status != 'completed')) {
     final diff = t.date.difference(now).inDays;
-    if (diff < 0)      score += 3;  // overdue
+    if (diff < 0)       score += 3; // overdue
     else if (diff == 0) score += 2; // due today
     else if (diff <= 7) score += 1; // due this week
   }
-
   for (final a in activities) {
     final diff = a.deadline.difference(now).inDays;
-    if (diff < 0)      score += 3;
+    if (diff < 0)       score += 3;
     else if (diff <= 2) score += 2;
     else if (diff <= 7) score += 1;
   }
-
   return score.clamp(0, 100);
 }
 ```
@@ -237,76 +275,26 @@ gantt
     title PrepPilot Build Plan
     dateFormat  YYYY-MM-DD
     section Phase 1 — Core Loop
-    Flutter + SQLite setup         :p1a, 2026-03-16, 3d
-    Tasks screen + CRUD            :p1b, after p1a, 3d
-    Calendar view                  :p1c, after p1b, 3d
-    Dashboard today view           :p1d, after p1c, 2d
+    Flutter + SQLite setup         :done, p1a, 2026-03-16, 3d
+    Tasks screen + CRUD            :done, p1b, after p1a, 3d
+    Calendar view                  :done, p1c, after p1b, 3d
+    Dashboard today view           :done, p1d, after p1c, 2d
 
     section Phase 2 — Trackers
-    Activity Tracker screen        :p2a, after p1d, 3d
-    Project Manager screen         :p2b, after p2a, 3d
-    Notes (text + image)           :p2c, after p2b, 2d
+    Activity Tracker screen        :done, p2a, after p1d, 3d
+    Project Manager screen         :done, p2b, after p2a, 3d
+    Notes (text + image)           :done, p2c, after p2b, 2d
 
     section Phase 3 — Storage + Notifications
-    File index vault               :p3a, after p2c, 2d
-    Local notifications            :p3b, after p3a, 2d
-    Resume reminder trigger        :p3c, after p3b, 2d
+    File index vault               :done, p3a, after p2c, 2d
+    Local notifications            :done, p3b, after p3a, 2d
+    Resume reminder trigger        :done, p3c, after p3b, 2d
 
     section Phase 4 — Polish
-    Pressure score + dashboard     :p4a, after p3c, 2d
-    PDF + CSV export               :p4b, after p4a, 3d
-    Dark mode + onboarding         :p4c, after p4b, 2d
-    README + portfolio polish      :p4d, after p4c, 1d
-```
-
----
-
-## 🤖 Antigravity System Prompt
-
-> Copy this into your Antigravity IDE skills/system prompt before starting any agent task.
-
-```
-You are working on PrepPilot — a local-first Flutter career preparation app.
-
-STACK:
-- Flutter 3.x + Dart 3.x
-- State management: Riverpod (flutter_riverpod)
-- Database: sqflite + path_provider
-- Architecture: feature-first folder structure
-
-ARCHITECTURE RULES:
-- Zero network calls. No HTTP, no Firebase, no API of any kind.
-- All data lives in SQLite on-device only.
-- Use Riverpod providers for all state. No setState except inside isolated widgets.
-- Repository pattern: each feature has a repo class that wraps sqflite queries.
-- Polymorphic FK pattern: notes, files, reminders use linked_type + linked_id.
-
-SCHEMA (6 tables):
-tasks(task_id, title, date, time, priority, status, linked_type, linked_id)
-activities(activity_id, type, name, platform, deadline, progress, notes)
-projects(project_id, name, description, status, repo_url)
-notes(note_id, linked_type, linked_id, text_content, image_uri, created_at)
-file_index(file_id, linked_type, linked_id, label, local_uri, file_type, created_at)
-reminders(reminder_id, linked_type, linked_id, trigger_type, scheduled_at, fired)
-
-UI RULES:
-- Clean minimal Material 3. White backgrounds, #F8F9FA card surfaces.
-- Accent color: #5C6BC0 (muted indigo).
-- Primary text: #212121. Secondary: #757575.
-- Flat outlined cards only — no elevation shadows.
-- Bottom nav: 3 tabs only — Home, Track, Plan.
-
-FOLDER STRUCTURE:
-lib/
-  core/         → database helper, constants, theme
-  features/
-    dashboard/  → provider, screen, widgets
-    tasks/      → model, repo, provider, screen, widgets
-    activities/ → model, repo, provider, screen, widgets
-    projects/   → model, repo, provider, screen, widgets
-    vault/      → model, repo, provider, screen, widgets
-    notifications/ → service, rules
-  shared/       → common widgets, extensions, utils
+    Pressure score + dashboard     :done, p4a, after p3c, 2d
+    PDF + CSV export               :done, p4b, after p4a, 3d
+    Dark mode + onboarding         :done, p4c, after p4b, 2d
+    v1.0.0 release                 :done, p4d, after p4c, 1d
 ```
 
 ---
@@ -323,6 +311,10 @@ flutter pub get
 
 # Run on device or emulator
 flutter run
+
+# Build release APK
+flutter build apk --release
+# Output: build/app/outputs/flutter-apk/app-release.apk
 ```
 
 **Requirements:** Flutter 3.x · Dart 3.x · Android SDK 21+ or iOS 13+
@@ -345,14 +337,16 @@ Please follow the existing folder structure and Riverpod patterns when contribut
 
 ## 📄 License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
 
+<img src="assets/images/logo.png" width="48" height="48" alt="PrepPilot"/>
+
 Built with focus by [sangsaist](https://github.com/sangsaist)
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=5C6BC0&height=100&section=footer" width="100%"/>
+[![GitHub](https://img.shields.io/badge/GitHub-sangsaist-181717?style=flat-square&logo=github)](https://github.com/sangsaist/PrepPilot)
 
 </div>
