@@ -8,6 +8,7 @@ import 'package:preppilot/features/tasks/widgets/task_card.dart';
 import 'package:preppilot/features/tasks/widgets/task_bottom_sheet.dart';
 import 'package:preppilot/features/activities/model/activity_model.dart';
 import 'package:preppilot/features/activities/provider/activity_provider.dart';
+import 'package:preppilot/shared/widgets/empty_state.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -40,9 +41,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         : <Activity>[];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Planning'),
-      ),
       body: Column(
         children: [
           _buildCalendar(allTasksAsync, allActivitiesAsync),
@@ -53,6 +51,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'calendar_fab',
         onPressed: () {
           showModalBottomSheet(
             context: context,
@@ -131,15 +130,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildCombinedList(List<Task> tasks, List<Activity> activities) {
     if (tasks.isEmpty && activities.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_available, size: 64, color: AppTheme.secondaryText.withOpacity(0.3)),
-            const SizedBox(height: 16),
-            Text('No events for this day', style: TextStyle(color: AppTheme.secondaryText)),
-          ],
-        ),
+      return const EmptyState(
+        icon: Icons.event_available,
+        title: 'No events for this day',
+        subtitle: 'Schedule a task or track an activity',
       );
     }
 

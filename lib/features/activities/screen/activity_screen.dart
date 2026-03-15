@@ -4,6 +4,13 @@ import 'package:preppilot/core/theme/app_theme.dart';
 import 'package:preppilot/features/activities/model/activity_model.dart';
 import 'package:preppilot/features/activities/provider/activity_provider.dart';
 import 'package:preppilot/features/activities/widgets/activity_bottom_sheet.dart';
+import 'package:preppilot/features/projects/provider/project_provider.dart';
+import 'package:preppilot/features/projects/screen/project_screen.dart';
+import 'package:preppilot/features/projects/screen/project_detail_screen.dart';
+import 'package:preppilot/features/projects/widgets/project_bottom_sheet.dart';
+import 'package:preppilot/shared/widgets/empty_state.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:preppilot/features/projects/model/project_model.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
   const ActivityScreen({super.key});
@@ -18,32 +25,110 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
   @override
   Widget build(BuildContext context) {
     final activities = ref.watch(filteredActivitiesProvider(_selectedFilter));
+    final projects = ref.watch(projectNotifierProvider).value ?? [];
     final isLoading = ref.watch(activityNotifierProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Activity Tracker'),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(activityNotifierProvider);
+          ref.read(projectNotifierProvider.notifier).refresh();
+        },
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildFilterBar()),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('Tracked Activities', style: Theme.of(context).textTheme.titleLarge),
+              ),
+            ),
+            if (isLoading && activities.isEmpty)
+              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+            else if (activities.isEmpty)
+              SliverToBoxAdapter(
+                child: EmptyState(
+                  icon: Icons.emoji_events_outlined,
+                  title: 'No activities yet',
+                  subtitle: 'Track a hackathon or certification',
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => _ActivityCard(activity: activities[index]),
+                    childCount: activities.length,
+                  ),
+                ),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Projects', style: Theme.of(context).textTheme.titleLarge),
+                    TextButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProjectScreen())),
+                      child: const Text('See all'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (projects.isEmpty)
+              SliverToBoxAdapter(
+                child: EmptyState(
+                  icon: Icons.code_outlined,
+                  title: 'No projects yet',
+                  subtitle: 'Add your first dev project',
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 160,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: projects.length,
+                    itemBuilder: (context, index) => _CompactProjectCard(project: projects[index]),
+                  ),
+                ),
+              ),
+            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          ],
+        ),
       ),
-      body: Column(
+      floatingActionButton: SpeedDial(
+        heroTag: 'activity_fab',
+        icon: Icons.add,
+        activeIcon: Icons.close,
+        backgroundColor: AppTheme.primaryColor,
+        foregroundColor: Colors.white,
         children: [
-          _buildFilterBar(),
-          Expanded(
-            child: isLoading && activities.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _buildActivityList(activities),
+          SpeedDialChild(
+            child: const Icon(Icons.assignment_outlined),
+            label: 'Add Activity',
+            onTap: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              builder: (context) => const ActivityBottomSheet(),
+            ),
+          ),
+          SpeedDialChild(
+            child: const Icon(Icons.code_outlined),
+            label: 'Add Project',
+            onTap: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              builder: (context) => const ProjectBottomSheet(),
+            ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            builder: (context) => const ActivityBottomSheet(),
-          );
-        },
-        backgroundColor: AppTheme.primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -64,7 +149,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               onSelected: (selected) {
                 if (selected) setState(() => _selectedFilter = filter);
               },
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
               selectedColor: AppTheme.primaryColor.withOpacity(0.1),
               side: BorderSide(
                 color: isSelected ? AppTheme.primaryColor : const Color(0xFFE0E0E0),
@@ -79,31 +164,67 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       ),
     );
   }
+}
 
-  Widget _buildActivityList(List<Activity> activities) {
-    if (activities.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.assignment_outlined, size: 64, color: AppTheme.secondaryText.withOpacity(0.3)),
-            const SizedBox(height: 16),
-            Text(
-              'No $_selectedFilter activities found',
-              style: TextStyle(color: AppTheme.secondaryText),
-            ),
-          ],
+class _CompactProjectCard extends StatelessWidget {
+  final Project project;
+  const _CompactProjectCard({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: project)),
         ),
-      );
-    }
+        child: Container(
+          width: 200,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                project.name,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                project.description,
+                style: const TextStyle(fontSize: 12, color: AppTheme.secondaryText),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                   _buildStatusIndicator(project.status),
+                   const Icon(Icons.arrow_forward_ios, size: 12),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: activities.length,
-      itemBuilder: (context, index) {
-        final activity = activities[index];
-        return _ActivityCard(activity: activity);
-      },
+  Widget _buildStatusIndicator(String status) {
+    Color color;
+    switch (status.toLowerCase()) {
+      case 'active': color = AppTheme.primaryColor; break;
+      case 'completed': color = Colors.teal; break;
+      case 'paused': color = Colors.grey; break;
+      default: color = Colors.grey;
+    }
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

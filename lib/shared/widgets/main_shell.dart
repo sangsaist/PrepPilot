@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:preppilot/features/dashboard/screen/dashboard_screen.dart';
 import 'package:preppilot/features/activities/screen/activity_screen.dart';
 import 'package:preppilot/features/tasks/screen/calendar_screen.dart';
+import 'package:preppilot/features/settings/screen/settings_screen.dart';
 
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
@@ -22,7 +23,23 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final titles = ['Home', 'Track', 'Plan'];
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text(titles[_currentIndex]),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: IndexedStack(
         index: _currentIndex,
         children: _tabs,

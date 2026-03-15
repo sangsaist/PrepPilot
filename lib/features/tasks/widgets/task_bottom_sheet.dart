@@ -7,8 +7,16 @@ import 'package:preppilot/features/tasks/provider/task_provider.dart';
 class TaskBottomSheet extends ConsumerStatefulWidget {
   final Task? task;
   final DateTime? initialDate;
+  final String? linkedType;
+  final int? linkedId;
 
-  const TaskBottomSheet({super.key, this.task, this.initialDate});
+  const TaskBottomSheet({
+    super.key, 
+    this.task, 
+    this.initialDate,
+    this.linkedType,
+    this.linkedId,
+  });
 
   @override
   ConsumerState<TaskBottomSheet> createState() => _TaskBottomSheetState();
@@ -76,6 +84,8 @@ class _TaskBottomSheetState extends ConsumerState<TaskBottomSheet> {
       time: _selectedTime != null ? "${_selectedTime!.hour}:${_selectedTime!.minute}" : null,
       priority: _priority,
       status: _status,
+      linkedType: widget.task?.linkedType ?? widget.linkedType,
+      linkedId: widget.task?.linkedId ?? widget.linkedId,
     );
 
     if (widget.task == null) {

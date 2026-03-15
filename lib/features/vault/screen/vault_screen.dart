@@ -5,6 +5,7 @@ import 'package:open_file/open_file.dart';
 import 'package:preppilot/core/theme/app_theme.dart';
 import 'package:preppilot/features/vault/model/file_index_model.dart';
 import 'package:preppilot/features/vault/provider/vault_provider.dart';
+import 'package:preppilot/shared/widgets/empty_state.dart';
 
 class VaultScreen extends ConsumerStatefulWidget {
   const VaultScreen({super.key});
@@ -18,22 +19,33 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filesAsync = ref.watch(vaultNotifierProvider);
     final files = ref.watch(filesByTypeProvider(_selectedFilter));
-    final isLoading = ref.watch(vaultNotifierProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Storage Vault'),
       ),
-      body: Column(
-        children: [
-          _buildFilterBar(),
-          Expanded(
-            child: isLoading && files.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _buildFileContent(files),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(vaultNotifierProvider.notifier).refreshFiles(),
+        child: Column(
+          children: [
+            _buildFilterBar(),
+            Expanded(
+              child: filesAsync.when(
+                data: (_) => _buildFileContent(files),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => EmptyState(
+                  icon: Icons.error_outline,
+                  title: 'Something went wrong',
+                  subtitle: e.toString(),
+                  actionLabel: 'Retry',
+                  onAction: () => ref.invalidate(vaultNotifierProvider),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _pickAndAddFile,
@@ -64,7 +76,7 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
               onSelected: (selected) {
                 if (selected) setState(() => _selectedFilter = filter);
               },
-              backgroundColor: Colors.white,
+              backgroundColor: Theme.of(context).cardColor,
               selectedColor: AppTheme.primaryColor.withOpacity(0.1),
               side: BorderSide(
                 color: isSelected ? AppTheme.primaryColor : const Color(0xFFE0E0E0),
@@ -82,15 +94,12 @@ class _VaultScreenState extends ConsumerState<VaultScreen> {
 
   Widget _buildFileContent(List<FileIndex> files) {
     if (files.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.folder_open_outlined, size: 64, color: AppTheme.secondaryText.withOpacity(0.3)),
-            const SizedBox(height: 16),
-            Text('No $_selectedFilter files found', style: TextStyle(color: AppTheme.secondaryText)),
-          ],
-        ),
+      return EmptyState(
+        icon: Icons.folder_open_outlined,
+        title: 'No files yet',
+        subtitle: _selectedFilter == 'All' 
+            ? 'Attach files to any activity or project'
+            : 'No $_selectedFilter files found',
       );
     }
 

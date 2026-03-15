@@ -12,6 +12,8 @@ import 'package:preppilot/features/tasks/widgets/task_bottom_sheet.dart';
 import 'package:preppilot/features/vault/screen/vault_screen.dart';
 import 'package:preppilot/shared/utils/csv_exporter.dart';
 import 'package:preppilot/shared/utils/pdf_exporter.dart';
+import 'package:preppilot/shared/widgets/empty_state.dart';
+import 'package:preppilot/shared/provider/user_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -23,29 +25,20 @@ class DashboardScreen extends ConsumerWidget {
     final todayTasks = ref.watch(todayTasksProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('PrepPilot'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildVaultCard(context),
+            _buildHeader(ref),
             const SizedBox(height: 24),
             _buildPressureCard(tasksAsync, activitiesAsync),
             const SizedBox(height: 24),
             _buildTodayTasks(context, todayTasks),
             const SizedBox(height: 24),
             _buildActiveActivities(context, activitiesAsync),
+            const SizedBox(height: 24),
+            _buildVaultCard(context),
             const SizedBox(height: 24),
             _buildExportSection(context, ref, tasksAsync, activitiesAsync),
             const SizedBox(height: 40),
@@ -61,36 +54,33 @@ class DashboardScreen extends ConsumerWidget {
           );
         },
         backgroundColor: AppTheme.primaryColor,
+        heroTag: 'dashboard_fab',
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Add Task', style: TextStyle(color: Colors.white)),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return FutureBuilder<SharedPreferences>(
-      future: SharedPreferences.getInstance(),
-      builder: (context, snapshot) {
-        final name = snapshot.data?.getString('user_name') ?? 'User';
-        final hour = DateTime.now().hour;
-        String greeting = "Good evening";
-        if (hour < 12) greeting = "Good morning";
-        else if (hour < 17) greeting = "Good afternoon";
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "$greeting, $name",
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              DateFormat('EEEE, d MMMM').format(DateTime.now()),
-              style: TextStyle(color: AppTheme.secondaryText, fontSize: 16),
-            ),
-          ],
-        );
-      },
+  Widget _buildHeader(WidgetRef ref) {
+    final name = ref.watch(userProvider);
+    final hour = DateTime.now().hour;
+    String greeting = "Good evening";
+    if (hour < 12) greeting = "Good morning";
+    else if (hour < 17) greeting = "Good afternoon";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "$greeting, $name",
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          DateFormat('EEEE, d MMMM').format(DateTime.now()),
+          style: TextStyle(color: AppTheme.secondaryText, fontSize: 16),
+        ),
+      ],
     );
   }
 
@@ -169,25 +159,10 @@ class DashboardScreen extends ConsumerWidget {
         const Text("Today's Tasks", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         if (todayTasks.isEmpty)
-          InkWell(
-            onTap: () {
-               // Plan tab is index 2
-               // We'll need a way to navigate from here, usually via a provider or scaffold key
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE0E0E0)),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
-                  SizedBox(width: 12),
-                  Text("No tasks today. Add one?", style: TextStyle(color: AppTheme.primaryColor)),
-                ],
-              ),
-            ),
+          const EmptyState(
+            icon: Icons.today,
+            title: "Free day!",
+            subtitle: "No tasks scheduled for today",
           )
         else
           SingleChildScrollView(

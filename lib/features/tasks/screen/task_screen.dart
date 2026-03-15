@@ -5,24 +5,33 @@ import 'package:preppilot/features/tasks/model/task_model.dart';
 import 'package:preppilot/features/tasks/provider/task_provider.dart';
 import 'package:preppilot/features/tasks/widgets/task_card.dart';
 import 'package:preppilot/features/tasks/widgets/task_bottom_sheet.dart';
+import 'package:preppilot/shared/widgets/empty_state.dart';
 
 class TaskScreen extends ConsumerWidget {
   const TaskScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tasksAsync = ref.watch(taskNotifierProvider);
     final overdueTasks = ref.watch(overdueTasksProvider);
     final todayTasks = ref.watch(todayTasksProvider);
     final upcomingTasks = ref.watch(upcomingTasksProvider);
-    final isLoading = ref.watch(taskNotifierProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tasks'),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(taskNotifierProvider.notifier).refreshTasks(),
+        child: tasksAsync.when(
+          data: (_) => _buildTaskLists(context, overdueTasks, todayTasks, upcomingTasks, ref),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, s) => EmptyState(
+            icon: Icons.error_outline,
+            title: 'Something went wrong',
+            subtitle: e.toString(),
+            actionLabel: 'Retry',
+            onAction: () => ref.invalidate(taskNotifierProvider),
+          ),
+        ),
       ),
-      body: isLoading && overdueTasks.isEmpty && todayTasks.isEmpty && upcomingTasks.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : _buildTaskLists(context, overdueTasks, todayTasks, upcomingTasks),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
@@ -42,25 +51,19 @@ class TaskScreen extends ConsumerWidget {
     List<Task> overdue,
     List<Task> today,
     List<Task> upcoming,
+    WidgetRef ref,
   ) {
     if (overdue.isEmpty && today.isEmpty && upcoming.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.task_outlined, size: 64, color: AppTheme.secondaryText.withOpacity(0.3)),
-            const SizedBox(height: 16),
-            const Text(
-              'No tasks found. Tap + to add one!',
-              style: TextStyle(color: AppTheme.secondaryText),
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: Icons.check_box_outline_blank,
+        title: "No tasks yet",
+        subtitle: "Tap + to add your first task",
       );
     }
 
     return ListView(
       padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         if (overdue.isNotEmpty) ...[
           _buildSectionHeader('Overdue', Colors.red),

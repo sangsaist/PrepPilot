@@ -5,6 +5,7 @@ import 'package:preppilot/shared/widgets/main_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:preppilot/shared/widgets/onboarding_screen.dart';
 import 'package:preppilot/features/notifications/service/notification_service.dart';
+import 'package:preppilot/core/theme/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,23 +17,50 @@ void main() async {
   );
 }
 
-class PrepPilotApp extends StatelessWidget {
+class PrepPilotApp extends ConsumerWidget {
   const PrepPilotApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'PrepPilot',
-      theme: AppTheme.lightTheme,
-      home: FutureBuilder<SharedPreferences>(
-        future: SharedPreferences.getInstance(),
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
+      darkTheme: AppTheme.darkTheme.copyWith(
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
+      themeMode: themeMode,
+      home: FutureBuilder<bool>(
+        future: _checkOnboarding(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          final onboarded = snapshot.data!.getBool('onboarded') ?? false;
-          return onboarded ? const MainShell() : const OnboardingScreen();
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          if (snapshot.data == true) {
+            return const MainShell();
+          }
+          return const OnboardingScreen();
         },
       ),
-      debugShowCheckedModeBanner: false,
     );
+  }
+
+  Future<bool> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('onboarded') ?? false;
   }
 }
